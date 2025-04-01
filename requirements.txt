@@ -1,0 +1,8 @@
+streamlit
+yfinance
+pandas
+numpy
+matplotlib
+gym
+stable-baselines3
+scipy
