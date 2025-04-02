@@ -1,8 +1,7 @@
 streamlit
-yfinance
 pandas
 numpy
-matplotlib
-gym
+yfinance
 stable-baselines3
 scipy
+gym
