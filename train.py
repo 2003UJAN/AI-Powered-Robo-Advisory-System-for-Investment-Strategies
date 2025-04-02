@@ -1,27 +1,35 @@
+import os
+import gym
 import numpy as np
-import pandas as pd
 from stable_baselines3 import PPO
-import yfinance as yf
 
-def fetch_stock_data(symbols):
-    stock_data = {ticker: yf.download(ticker, period="2y")["Adj Close"] for ticker in symbols}
-    return pd.DataFrame(stock_data)
+# Define or load environment (use OpenAI Gym or custom stock trading env)
+class StockTradingEnv(gym.Env):
+    def __init__(self, stock_symbols):
+        self.stock_symbols = stock_symbols
+        self.state = np.random.rand(len(stock_symbols))  # Dummy state
 
-def train_model(stock_data):
-    env = StockTradingEnv(stock_data)  # Define a stock trading gym environment
+    def reset(self):
+        self.state = np.random.rand(len(self.stock_symbols))
+        return self.state
+
+    def step(self, action):
+        reward = np.random.rand()  # Placeholder
+        done = False
+        return self.state, reward, done, {}
+
+def train_rl_model(stock_symbols):
+    env = StockTradingEnv(stock_symbols)
     model = PPO("MlpPolicy", env, verbose=1)
-    model.learn(total_timesteps=100000)
-    model.save("rl_trading_model")
-    return model
+    model.learn(total_timesteps=10000)
+    model.save("models/rl_trading_model")
 
 def load_trained_model():
-    return PPO.load("rl_trading_model")
+    model_path = os.path.abspath("models/rl_trading_model.zip")
+    return PPO.load(model_path)
 
-def recommend_portfolio(model, current_allocation):
-    action, _ = model.predict(np.array(current_allocation).reshape(1, -1))
-    return {stock: round(weight, 2) for stock, weight in zip(current_allocation.keys(), action)}
-
-if __name__ == "__main__":
-    stock_symbols = ["AAPL", "GOOGL", "MSFT", "AMZN", "TSLA"]
-    stock_data = fetch_stock_data(stock_symbols)
-    train_model(stock_data)
+def recommend_portfolio(model, stock_symbols, investment_amount):
+    action = model.predict(np.random.rand(len(stock_symbols)))[0]
+    weights = np.exp(action) / np.sum(np.exp(action))  # Normalize to sum to 1
+    allocations = (weights * investment_amount).round(2)
+    return dict(zip(stock_symbols, allocations))
