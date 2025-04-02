@@ -1,20 +1,28 @@
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
+from data_loader import fetch_stock_data
 
-def optimize_portfolio(stock_data):
-    returns = stock_data.pct_change().dropna()
+def optimize_portfolio(stock_symbols, investment_amount):
+    data = fetch_stock_data(stock_symbols)
+
+    # Compute returns & covariance matrix
+    returns = data.pct_change().dropna()
     mean_returns = returns.mean()
     cov_matrix = returns.cov()
-    
-    def portfolio_variance(weights):
-        return np.dot(weights.T, np.dot(cov_matrix, weights))
 
-    num_assets = len(mean_returns)
-    init_guess = num_assets * [1. / num_assets]
-    bounds = tuple((0, 1) for _ in range(num_assets))
+    # Define objective function for minimizing risk
+    def portfolio_volatility(weights):
+        return np.sqrt(weights.T @ cov_matrix @ weights)
+
+    # Constraints: weights sum to 1
     constraints = ({'type': 'eq', 'fun': lambda w: np.sum(w) - 1})
-    
-    result = minimize(portfolio_variance, init_guess, method='SLSQP', bounds=bounds, constraints=constraints)
-    return dict(zip(stock_data.columns, result.x))
+    bounds = [(0, 1) for _ in stock_symbols]
 
+    # Optimize weights
+    init_guess = [1 / len(stock_symbols)] * len(stock_symbols)
+    result = minimize(portfolio_volatility, init_guess, bounds=bounds, constraints=constraints)
+
+    # Allocate investment
+    allocation = (result.x * investment_amount).round(2)
+    return dict(zip(stock_symbols, allocation))
