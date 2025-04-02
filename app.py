@@ -1,47 +1,25 @@
 import streamlit as st
 import os
-from train import load_trained_model, recommend_portfolio
 from portfolio_optimizer import optimize_portfolio
+from train import load_trained_model, recommend_portfolio
 
-# Load trained model
-MODEL_PATH = "models/rl_trading_model.zip"  # Update path if needed
-if not os.path.exists(MODEL_PATH):
-    st.error(f"Model file not found: {MODEL_PATH}. Please train the model first.")
-else:
-    model = load_trained_model()
+# Load the trained RL model
+model = load_trained_model()
 
-# Streamlit UI
+# Streamlit UI Layout
 st.set_page_config(page_title="AI-Powered Robo-Advisory System", layout="wide")
 
-# Center the stock selection UI
-st.markdown(
-    """
-    <style>
-        .block-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-        .stTextInput, .stNumberInput, .stButton {
-            width: 50%;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# Centered layout using columns
+st.markdown("<h1 style='text-align: center;'>AI-Powered Robo-Advisory System</h1>", unsafe_allow_html=True)
+col1, col2, col3 = st.columns([1, 2, 1])
 
-st.title("📈 AI-Powered Robo-Advisory System")
+with col2:
+    st.subheader("Stock Selection")
+    stock_symbols = st.text_input("Enter stock symbols (comma-separated)", "AAPL,GOOGL,MSFT,AMZN,TSLA")
+    investment_amount = st.number_input("Investment Amount ($)", min_value=1000, value=10000, step=1000)
 
-# Stock selection input
-st.subheader("Stock Selection")
-stocks = st.text_input("Enter stock symbols (comma-separated)", "AAPL,GOOGL,MSFT,AMZN,TSLA")
-investment = st.number_input("Investment Amount ($)", min_value=1000, value=10000, step=1000)
-
-if st.button("Optimize Portfolio"):
-    stock_list = stocks.split(",")
-    recommended_portfolio = recommend_portfolio(model, stock_list, investment)
-    optimized_portfolio = optimize_portfolio(recommended_portfolio)
-
-    st.subheader("📊 Optimized Portfolio Allocation")
-    st.write(optimized_portfolio)
+    if st.button("Optimize Portfolio"):
+        stock_list = [s.strip().upper() for s in stock_symbols.split(",")]
+        optimized_portfolio = recommend_portfolio(model, stock_list, investment_amount)
+        st.write("### Recommended Portfolio:")
+        st.write(optimized_portfolio)
